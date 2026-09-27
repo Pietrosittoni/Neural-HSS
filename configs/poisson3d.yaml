@@ -1,0 +1,31 @@
+# Neural-HSS — 3D Poisson data-efficiency experiment
+# Matches Appendix F.2.3 and Appendix M, Table 9.
+
+seed: 42
+device: 0
+
+data_path: data/poisson3d.h5
+grid_size: 128
+train_size: 256
+val_size: 200
+batch_size: 16
+
+# Model
+depth: 1
+levels: 2
+rank: 4
+outer_rank: 2
+
+# Optimization
+max_steps: 16000
+learning_rate: 5.0e-3
+learning_rate_min: 1.0e-3
+weight_decay: 0.0
+betas: [0.9, 0.99]
+grad_clip: 1.0
+slope_reg: 1.0e-8
+eval_every: 200
+
+use_wandb: false
+project: neural-hss-poisson3d
+checkpoint_dir: checkpoints
