@@ -1,5 +1,6 @@
-"""Official Neural-HSS implementation for the 3D Poisson experiment."""
+"""Official Neural-HSS implementation."""
 
-from neural_hss.model import NeuralHSS3D
+from neural_hss.layers import HSSLayer, HSSNode, TrainableLeakyReLU
+from neural_hss.model import NeuralHSS
 
-__all__ = ["NeuralHSS3D"]
+__all__ = ["NeuralHSS", "HSSLayer", "HSSNode", "TrainableLeakyReLU"]

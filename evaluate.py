@@ -12,7 +12,7 @@ import torch.nn as nn
 from neural_hss.config import Config
 from neural_hss.data import load_poisson3d, make_dataloaders
 from neural_hss.metrics import RelativeL2
-from neural_hss.model import NeuralHSS3D
+from neural_hss.model import NeuralHSS
 
 
 def parse_args() -> argparse.Namespace:
@@ -48,8 +48,9 @@ def main() -> None:
         x_train, y_train, x_val, y_val, batch_size=int(config.batch_size), device=device
     )
 
-    model = NeuralHSS3D(
-        grid_size=int(config.grid_size),
+    model = NeuralHSS(
+        size=int(config.grid_size),
+        ndim=int(config.get("ndim", 3)),
         depth=int(config.depth),
         levels=int(config.levels),
         rank=int(config.rank),

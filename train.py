@@ -14,7 +14,7 @@ import torch.nn as nn
 from neural_hss.config import Config
 from neural_hss.data import load_poisson3d, make_dataloaders
 from neural_hss.metrics import RelativeL2
-from neural_hss.model import NeuralHSS3D
+from neural_hss.model import NeuralHSS
 
 
 def set_seed(seed: int) -> None:
@@ -76,8 +76,9 @@ def main() -> None:
     )
     print(f"Train samples: {len(x_train)}  |  Test samples: {len(x_val)}  |  scale={scale:.4e}")
 
-    model = NeuralHSS3D(
-        grid_size=int(config.grid_size),
+    model = NeuralHSS(
+        size=int(config.grid_size),
+        ndim=int(config.get("ndim", 3)),
         depth=int(config.depth),
         levels=int(config.levels),
         rank=int(config.rank),

@@ -11,6 +11,7 @@ val_size: 200
 batch_size: 16
 
 # Model
+ndim: 3
 depth: 1
 levels: 2
 rank: 4

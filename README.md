@@ -18,11 +18,24 @@ on a $128\times128\times128$ grid ($\approx 2\times 10^6$ points).
 
 ## Overview
 
-Neural-HSS injects the Hierarchical Semi-Separable (HSS) structure of elliptic Green’s functions into a neural PDE solver. In 3D, each layer is a CP expansion of modal products of one-dimensional HSS factors (paper Eq. 1):
+Neural-HSS injects the Hierarchical Semi-Separable (HSS) structure of elliptic Green’s functions into a neural PDE solver. The same `NeuralHSS` model covers one-dimensional HSS layers and the *m*-dimensional CP expansion (paper Eq. 1):
 
-$$H_\theta(Z)=\sum_{k=1}^{r_{\mathrm{out}}} Z \bigtimes_{j=1}^{3} W_j^{(k)}, \qquad W_j^{(k)}\in\mathrm{HSS}(r).$$
+$$H_\theta(Z)=\sum_{k=1}^{r_{\mathrm{out}}} Z \bigtimes_{j=1}^{m} W_j^{(k)}, \qquad W_j^{(k)}\in\mathrm{HSS}(r).$$
 
-The 3D experiment in Section 3.1 trains this model with **16 to 256** samples and **16k** optimization steps (Appendix M, Table 9).
+```python
+from neural_hss import NeuralHSS
+
+# 1D
+model = NeuralHSS(size=256, ndim=1, depth=3, levels=3, rank=2)
+
+# 2D
+model = NeuralHSS(size=64, ndim=2, depth=3, levels=2, rank=2, outer_rank=8)
+
+# 3D Poisson experiment (Appendix M, Table 9)
+model = NeuralHSS(size=128, ndim=3, depth=1, levels=2, rank=4, outer_rank=2)
+```
+
+This repository ships the **3D Poisson data-efficiency experiment** from Section 3.1: **16 to 256** training samples and **16k** optimization steps.
 
 ## Installation
 
