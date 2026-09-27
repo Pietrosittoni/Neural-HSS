@@ -1,0 +1,50 @@
+project: "hss_learning_2d_gray_scott"
+seed: 42
+device: 0
+
+data_path: "./data_hss/gray_scott"
+spatial_resolution: 128
+train_size: 960
+
+batch_size: 64
+
+model: "hss_mlp_2d_2dout"
+folder_model_path: "./data_hss/models"
+
+# FNO2D
+modes: 16
+in_channels: 4
+out_channels: 2
+hidden_channels: 32
+hidden_layers: 4
+
+# ResNet2D
+resnet_hidden_channels: 32
+resnet_hidden_layers: 4
+
+# GreenLearning2D
+s: 64
+embed_dim: 64
+depth: 4
+
+## HSS_MLP
+levels: 2
+hidden_sizes: [128,128,128]
+rank: 16
+input_size: 128
+output_size: 128
+outer_rank: 8
+# DeepONet2D
+n: 64
+branch_hidden_dim: 64
+trunk_hidden_dim: 64
+embedding_dim: 64
+
+epochs: 800
+
+learning_rate: 1.0e-3
+scheduler: "cosine"
+learning_rate_min: 5.0e-5
+weight_decay: 1.0e-5
+
+tags: null

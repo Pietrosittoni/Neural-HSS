@@ -1,0 +1,113 @@
+from pde import PDE,ScalarField,UnitGrid
+import numpy as np
+import os
+import argparse
+import pandas as pd
+
+
+def sample_fourier_2d(n, N_modes_fourier=10):
+    grid = UnitGrid([n, n])
+    state = ScalarField.random_colored(grid,exponent=-1,scale = 0.5,)
+    # state = ScalarField.random_harmonic(grid,modes = N_modes_fourier,harmonic = np.sin)
+    return state
+
+
+import numba as nb
+
+from pde import PDEBase, ScalarField, UnitGrid
+
+
+# class KuramotoSivashinskyPDE(PDEBase):
+#     """Implementation of the normalized Kuramoto–Sivashinsky equation."""
+
+#     def __init__(self, bc="auto_periodic_neumann"):
+#         super().__init__()
+#         self.bc = bc
+
+#     def evolution_rate(self, state, t=0):
+#         """Implement the python version of the evolution equation."""
+#         state_lap = state.laplace(bc=self.bc)
+#         state_lap2 = state_lap.laplace(bc=self.bc)
+#         state_grad_sq = state.gradient_squared(bc=self.bc)
+#         return -state_grad_sq / 2 - state_lap - state_lap2
+
+#     def _make_pde_rhs_numba(self, state):
+#         """Nunmba-compiled implementation of the PDE."""
+#         gradient_squared = state.grid.make_operator("gradient_squared", bc=self.bc)
+#         laplace = state.grid.make_operator("laplace", bc=self.bc)
+
+#         @nb.njit
+#         def pde_rhs(data, t):
+#             return -0.5 * gradient_squared(data) - laplace(data + laplace(data))
+
+#         return pde_rhs
+
+
+class Burger(PDEBase):
+    """Implementation of the normalized Burger equation."""
+
+    def __init__(self, bc="auto_periodic_neumann",nu = 0.01):
+        super().__init__()
+        self.bc = bc
+        self.nu = nu
+
+    def evolution_rate(self, state, t=0):
+        """Implement the python version of the evolution equation."""
+        state_lap = state.laplace(bc="auto_periodic_neumann")
+        state_grad = state.gradient(bc="auto_periodic_neumann")
+        return self.nu*state_lap - state*state_grad[0] + state*state_grad[1]
+
+
+def burger_steady_2d_linear_solver(f, nu=0.01):
+    """
+    Solve steady-state 2D Burgers' equation:
+    with Dirichlet BCs (u=0 at boundary).
+    """
+    state = f
+    # eq = PDE({"u": f"-gradient_squared(u) / 2 - {nu} * laplace(u + laplace(u))"},)  # define the pde
+    # eq = PDE({"u": f"u*d_dx(u) + u*d_dy(u) - {nu} * laplace(u)"})
+    eq = Burger(nu = nu)
+    u = eq.solve(state,t_range=20,adaptive = True)
+    return u.data
+
+def generate_dataset_2d_burger(n, n_samples, N_modes_fourier=10, nu=0.01):
+    X = np.zeros((n_samples, n, n))
+    Y = np.zeros((n_samples, n, n))
+    i = 0
+    while i < n_samples:
+        try:
+            print(f"Generating sample {i+1}/{n_samples}")
+            f = sample_fourier_2d(n, N_modes_fourier)
+            u = burger_steady_2d_linear_solver(f, nu=nu)
+            X[i] = f.data
+            Y[i] = u
+            i+=1
+        except Exception as e:
+            print(f"Error generating sample {i+1}: {e}, retrying...")
+            continue
+    X = X.reshape(n_samples, n*n)
+    Y = Y.reshape(n_samples, n*n)
+    return X, Y
+
+def main():
+    parser = argparse.ArgumentParser(prog='HSS-learning-2D-Kuramoto-Sivashinsky')
+    parser.add_argument('--n_grid_pts', type=int, default=64, help='Number of grid points per axis')
+    parser.add_argument('--n_samples', type=int, default=5000, help='Number of samples to produce')
+    parser.add_argument('--N_modes_fourier', type=int, default=10, help='Number of Fourier sine modes')
+    parser.add_argument('--nu', type=float, default=1., help='Viscosity')
+    parser.add_argument('--output_dir', type=str, default='./data_hss', help='Output directory for dataset')
+    args = parser.parse_args()
+
+    np.random.seed(42)
+    X, Y = generate_dataset_2d_burger(args.n_grid_pts, args.n_samples, args.N_modes_fourier, nu=args.nu)
+
+    os.makedirs(args.output_dir, exist_ok=True)
+    filename = f"dataset_2D_burger_res{args.n_grid_pts}_N{args.n_samples}.parquet"
+    output_path = os.path.join(args.output_dir, filename)
+
+    df = pd.DataFrame({'X': list(X), 'Y': list(Y)})
+    df.to_parquet(output_path, engine='pyarrow')
+    print(f"Dataset saved to '{output_path}'")
+
+if __name__ == '__main__':
+    main()
