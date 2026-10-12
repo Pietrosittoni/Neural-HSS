@@ -130,7 +130,7 @@ class ChannelMix(nn.Module):
 
 
 class HSSLayer(nn.Module):
-    """HSS layer in any spatial dimension.
+    """HSS layer in any spatial dimension through CP expansion approximation.
 
     * ``ndim = 1``: a single HSS matrix, as in the one-dimensional model.
     * ``ndim > 1``: the m-dimensional layer from Eq. (1),
