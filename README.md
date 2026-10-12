@@ -20,7 +20,7 @@ on a $128\times128\times128$ grid ($\approx 2\times 10^6$ points).
 
 Neural-HSS injects the Hierarchical Semi-Separable (HSS) structure of elliptic Green’s functions into a neural PDE solver. The same `NeuralHSS` model covers one-dimensional HSS layers and the *m*-dimensional CP expansion (paper Eq. 1):
 
-$$H_\theta(Z)=\sum_{k=1}^{r_{\mathrm{out}}} Z \bigtimes_{j=1}^{m} W_j^{(k)}, \qquad W_j^{(k)}\in\mathrm{HSS}(r).$$
+$$H_\theta(Z)=\sum_{k=1}^{r_{\mathrm{out}}} Z \bigtimes_{j=1}^{m} W_j^{(k)}, \qquad W_j^{(k)}\in\mathrm{HSS}(r), \qquad \theta = \{ W_j^{(k)}_{j,k} \}$$
 
 ```python
 from neural_hss import NeuralHSS
