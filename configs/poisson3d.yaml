@@ -16,6 +16,8 @@ depth: 1
 levels: 2
 rank: 4
 outer_rank: 2
+# torch (reference) | cuda (fused CUDA kernels, FP32-level accuracy) | cuda-tf32 (faster, TF32 precision)
+backend: torch
 
 # Optimization
 max_steps: 16000
