@@ -117,16 +117,6 @@ model = NeuralHSS(size=128, ndim=3, depth=1, levels=2, rank=4, outer_rank=2, bac
 
 How it works (`neural_hss/csrc/hss_cuda.cu`, `neural_hss/cuda_backbone.py`): the HSS factors are assembled into dense matrices in one kernel launch (large blocks are split over many thread blocks), and every mode product of Eq. (1), forward and backward, runs as a strided GEMM on tensor cores that reads and writes the activations in place, with no permute copies. The CP terms share launches, bias and activation are fused into the last GEMM, and long reductions (weight gradients, small batches) are split across the GPU. `cuda` splits each operand into two TF32 parts (3xTF32) and sums every 32-wide slice of the reduction in FP32 outside the tensor cores, whose accumulator rounds toward zero and would otherwise drift with the reduction length. `cuda-tf32` uses a single TF32 pass.
 
-Accuracy against an FP64 run of the reference implementation (relative error, worst case over 11 configurations covering `ndim` 1 to 4, and the paper configuration at $128^3$):
-
-| Backend | Output | Input and factor gradients | $128^3$ output / gradients |
-| --- | --- | --- | --- |
-| `torch` (FP32) | $2\cdot 10^{-7}$ | $1.6\cdot 10^{-6}$ | $2\cdot 10^{-7}$ / $4\cdot 10^{-7}$ |
-| `cuda` | $1.6\cdot 10^{-6}$ | $2.2\cdot 10^{-6}$ | $8\cdot 10^{-7}$ / $9\cdot 10^{-7}$ |
-| `cuda-tf32` | $8\cdot 10^{-4}$ | $2.3\cdot 10^{-3}$ | $5\cdot 10^{-4}$ / $6\cdot 10^{-4}$ |
-
-The gradient of the activation slope, a single sum with heavy cancellation, is within $10^{-5}$ for `cuda` ($3\cdot 10^{-6}$ for PyTorch FP32). Gradients are compared with slope 1. With slope $\neq 1$ the LeakyReLU gradient jumps at zero, so any change in rounding moves a few pre-activations that are within $10^{-7}$ of zero to the other branch: at $128^3$, `cuda` flips 3 of 8.4M pre-activations, which changes the gradients by about $10^{-3}$, and `cuda-tf32` flips about 1400. Both are as valid as the reference (a different subgradient), and training curves match (`pytest tests/` checks all of the above). `cuda-tf32` stalled once at a higher loss in our 2000-step $32^3$ runs, so `cuda` is the safer choice for the paper experiments.
-
 Time per training step (forward + MSE + backward + clipping + AdamW, back to back) / inference, in ms, on an A100 80GB PCIe (`torch` with PyTorch's default FP32 matmuls). The paper models are those of the `NeuralHSS` docstring (1D: depth 3, levels 3, rank 2; 2D: depth 2, levels 2, rank 2, $r_{\mathrm{out}}=8$; 3D: depth 1, levels 2, rank 4, $r_{\mathrm{out}}=2$); the other rows use the same layers at other sizes:
 
 | Configuration | `torch` | `cuda` | `cuda-tf32` |
@@ -140,8 +130,6 @@ Time per training step (forward + MSE + backward + clipping + AdamW, back to bac
 | 4D, $32^4$, depth 1, levels 2, rank 2, $r_{\mathrm{out}}=2$, batch 4 | 43.2 / 9.43 | 4.89 / 1.24 (8.8× / 7.6×) | 4.85 / 0.79 (8.9× / 12×) |
 
 At $128^3$ the GPU is busy 95% of the step and the GEMMs run at about 70% of the card's sustained TF32 rate. In the small 1D and 2D models the CUDA training step is mostly CPU time spent on the hundreds of small HSS parameter tensors (autograd, `clip_grad_norm_`, AdamW), which costs the same with either backend; `torch.optim.AdamW(..., fused=True)` cuts the optimizer part by about 3×.
-
-Requirements: an sm_80+ GPU (A100, H100, RTX 30xx or newer), `nvcc` matching the CUDA major version of your PyTorch build (set `CUDA_HOME` if needed), and `pip install ninja`. The extension compiles on first use (about a minute) and is cached in `~/.cache/torch_extensions`. Spatial sizes must be multiples of 4 (automatic for `levels >= 2`); other layers keep the PyTorch implementation, with a warning. Each dense factor takes $N_{\mathrm{out}}\times N_{\mathrm{in}}$ floats (64 MB at $N = 4096$). CPU and non-float32 inputs use the PyTorch layers. The CUDA path gives first-order gradients only: a second derivative (`create_graph=True`, e.g. a gradient penalty) raises an error, so use `backend="torch"` for those.
 
 ## Paper settings (3D Poisson)
 

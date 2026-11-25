@@ -7,3 +7,8 @@ matplotlib>=3.8
 pandas>=2.0
 pyarrow>=14.0
 wandb>=0.16
+# CUDA backend (optional, backend: cuda / cuda-tf32): needs an sm_80+ GPU and nvcc
+# matching the CUDA version of your PyTorch build; the extension compiles on first use.
+ninja>=1.11
+# tests
+pytest>=7.4
