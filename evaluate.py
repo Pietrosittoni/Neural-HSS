@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-path", type=str, default=None)
     parser.add_argument("--device", type=int, default=None)
     parser.add_argument("--plot", type=str, default=None, help="Optional path for a mid-slice figure.")
+    parser.add_argument("--backend", choices=["torch", "cuda", "cuda-tf32"], default=None)
     return parser.parse_args()
 
 
@@ -33,6 +34,8 @@ def main() -> None:
         config.data_path = args.data_path
     if args.device is not None:
         config.device = args.device
+    if args.backend is not None:
+        config.backend = args.backend
 
     device = torch.device(f"cuda:{config.device}" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(args.checkpoint, map_location=device, weights_only=False)
@@ -55,6 +58,7 @@ def main() -> None:
         levels=int(config.levels),
         rank=int(config.rank),
         outer_rank=int(config.outer_rank),
+        backend=config.get("backend", "torch"),
     ).to(device)
     model.load_state_dict(ckpt["model"])
     model.eval()

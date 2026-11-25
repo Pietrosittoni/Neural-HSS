@@ -33,6 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-size", type=int, default=None)
     parser.add_argument("--data-path", type=str, default=None)
     parser.add_argument("--max-steps", type=int, default=None)
+    parser.add_argument("--backend", choices=["torch", "cuda", "cuda-tf32"], default=None)
     return parser.parse_args()
 
 
@@ -60,6 +61,8 @@ def main() -> None:
         config.data_path = args.data_path
     if args.max_steps is not None:
         config.max_steps = args.max_steps
+    if args.backend is not None:
+        config.backend = args.backend
 
     set_seed(int(config.seed))
     device = torch.device(f"cuda:{config.device}" if torch.cuda.is_available() else "cpu")
@@ -83,8 +86,9 @@ def main() -> None:
         levels=int(config.levels),
         rank=int(config.rank),
         outer_rank=int(config.outer_rank),
+        backend=config.get("backend", "torch"),
     ).to(device)
-    print(f"Neural-HSS parameters: {model.num_parameters:,}")
+    print(f"Neural-HSS parameters: {model.num_parameters:,}  |  backend: {model.backend}")
 
     use_wandb = bool(config.get("use_wandb", False))
     if use_wandb:
